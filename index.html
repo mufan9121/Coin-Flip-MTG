@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>MTG Coin Flip Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        body {
+            font-family: 'Press Start 2P', system-ui;
+            background: #f5e8c7;
+            color: #111111;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            max-width: 720px;
+            width: 100%;
+            background: #f5e8c7;
+            border: 18px solid #1c1c1c;
+            padding: 30px 25px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            margin: 0 0 20px 0;
+            color: #111111;
+            text-shadow: 2px 2px 0 #ffffff;
+        }
+        
+        .hakari-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        .hakari-gif {
+            max-width: 92%;
+            max-height: 88vh;
+            border: 16px solid #1c1c1c;
+            box-shadow: 0 0 60px #00ff88;
+        }
+        
+        .toggle-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .toggle {
+            flex: 1;
+            min-width: 240px;
+            background: #ffffff;
+            border: 6px solid #1c1c1c;
+            padding: 14px 18px;
+            font-size: 15px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 4px 4px 0 #1c1c1c;
+        }
+        
+        .toggle.active {
+            background: #e0d0a0;
+            box-shadow: 2px 2px 0 #1c1c1c;
+        }
+        
+        .button-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            font-family: 'Press Start 2P', system-ui;
+            background: #ffffff;
+            color: #111111;
+            border: 6px solid #1c1c1c;
+            padding: 18px 12px;
+            font-size: 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 #1c1c1c;
+        }
+        
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #1c1c1c;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffff;
+            border: 6px solid #1c1c1c;
+            padding: 12px 18px;
+        }
+        
+        .input-group label {
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        
+        input[type="number"] {
+            font-family: 'Press Start 2P', system-ui;
+            flex: 1;
+            padding: 12px;
+            font-size: 18px;
+            border: 6px solid #1c1c1c;
+            background: #f5e8c7;
+            color: #111111;
+            text-align: center;
+        }
+        
+        .log {
+            background: #ffffff;
+            border: 6px solid #1c1c1c;
+            height: 260px;
+            overflow-y: auto;
+            padding: 18px;
+            font-family: monospace;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #111111;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+        }
+        
+        .log-entry {
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted #888888;
+        }
+        
+        .success { color: #006600; font-weight: bold; }
+        .failure { color: #990000; font-weight: bold; }
+        .krark { color: #996600; }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #444444;
+        }
+        
+        .status {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #006600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MTG COIN FLIP SIMULATOR</h1>
+        <div class="status" id="flipStatus"></div>
+        
+        <div class="toggle-row">
+            <div id="krarkToggle" class="toggle" onclick="toggleKrark()">
+                <span id="krarkStatus">KRARK'S THUMB: OFF</span>
+            </div>
+            <div id="successToggle" class="toggle active" onclick="toggleSuccessSide()">
+                <span id="successStatus">SUCCESS = HEADS</span>
+            </div>
+        </div>
+        
+        <div class="button-row">
+            <button onclick="flipOne()">FLIP 1 COIN</button>
+            <button onclick="flipX()">FLIP X TIMES</button>
+            <button onclick="flipTillFailure()">FLIP TILL FAILURE</button>
+        </div>
+        
+        <div class="input-group">
+            <label for="xInput">X = </label>
+            <input type="number" id="xInput" value="10" min="1" max="100">
+        </div>
+        
+        <div id="log" class="log"></div>
+        
+        <div class="footer">
+            Hakari Dance • Local GIF • Classic MTG Style
+        </div>
+    </div>
+
+    <!-- Hakari Dance Overlay (uses your local hakari.gif) -->
+    <div id="hakariOverlay" class="hakari-overlay">
+        <img id="hakariGif" class="hakari-gif" src="hakari.gif" alt="Hakari Dance">
+    </div>
+
+    <script>
+        let krarkActive = false;
+        let successIsHeads = true;
+        let logElement = null;
+        let xInput = null;
+        let hakariOverlay = null;
+        let isFlipping = false;
+        
+        function init() {
+            logElement = document.getElementById('log');
+            xInput = document.getElementById('xInput');
+            hakariOverlay = document.getElementById('hakariOverlay');
+            
+            addLog("MTG Coin Flip Simulator ready", "#000000");
+            addLog("Hakari Dance loaded from your phone!", "#006600");
+        }
+        
+        function showHakariDance() {
+            if (isFlipping) return;
+            isFlipping = true;
+            hakariOverlay.style.display = "flex";
+        }
+        
+        function hideHakariDance() {
+            hakariOverlay.style.display = "none";
+            isFlipping = false;
+        }
+        
+        function toggleKrark() {
+            krarkActive = !krarkActive;
+            const toggleEl = document.getElementById('krarkToggle');
+            const statusEl = document.getElementById('krarkStatus');
+            if (krarkActive) {
+                toggleEl.classList.add('active');
+                statusEl.textContent = "KRARK'S THUMB: ON";
+                addLog("KRARK'S THUMB ACTIVATED", "#996600");
+            } else {
+                toggleEl.classList.remove('active');
+                statusEl.textContent = "KRARK'S THUMB: OFF";
+                addLog("Krark's Thumb deactivated", "#666666");
+            }
+        }
+        
+        function toggleSuccessSide() {
+            successIsHeads = !successIsHeads;
+            const toggleEl = document.getElementById('successToggle');
+            const statusEl = document.getElementById('successStatus');
+            if (successIsHeads) {
+                toggleEl.classList.add('active');
+                statusEl.textContent = "SUCCESS = HEADS";
+                addLog("Success side set to HEADS", "#006600");
+            } else {
+                toggleEl.classList.remove('active');
+                statusEl.textContent = "SUCCESS = TAILS";
+                addLog("Success side set to TAILS", "#006600");
+            }
+        }
+        
+        function flipCoinLogic() {
+            let physical = [];
+            if (!krarkActive) {
+                const isHeads = Math.random() < 0.5;
+                physical = [isHeads ? "HEADS" : "TAILS"];
+            } else {
+                const coin1 = Math.random() < 0.5 ? "HEADS" : "TAILS";
+                const coin2 = Math.random() < 0.5 ? "HEADS" : "TAILS";
+                physical = [coin1, coin2];
+            }
+            
+            let chosen;
+            if (!krarkActive) {
+                chosen = physical[0];
+            } else {
+                const successSide = successIsHeads ? "HEADS" : "TAILS";
+                const failureSide = successIsHeads ? "TAILS" : "HEADS";
+                chosen = physical.includes(successSide) ? successSide : failureSide;
+            }
+            
+            const isSuccess = (chosen === "HEADS") === successIsHeads;
+            return { chosen, physical, isKrark: krarkActive, isSuccess };
+        }
+        
+        function addLog(text, color = "#111111") {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.style.color = color;
+            entry.innerHTML = text;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+            if (logElement.children.length > 50) logElement.removeChild(logElement.children[0]);
+        }
+        
+        async function flipOne() {
+            document.getElementById('flipStatus').textContent = "HAKARI MODE!";
+            const flip = flipCoinLogic();
+            showHakariDance();
+            await new Promise(r => setTimeout(r, 3000));
+            hideHakariDance();
+            document.getElementById('flipStatus').textContent = "";
+            
+            const successClass = flip.isSuccess ? 'success' : 'failure';
+            const label = flip.isSuccess ? "SUCCESS" : "FAILURE";
+            let message = `→ SINGLE FLIP: <span class="\( {successClass}"> \){flip.chosen} (${label})</span>`;
+            if (flip.isKrark) message += ` <span class="krark">(Krark: ${flip.physical[0]} + ${flip.physical[1]})</span>`;
+            addLog(message, flip.isSuccess ? "#006600" : "#990000");
+        }
+        
+        async function flipX() {
+            let num = parseInt(xInput.value) || 10;
+            if (num < 1) num = 1;
+            if (num > 100) num = 100;
+            xInput.value = num;
+            
+            document.getElementById('flipStatus').textContent = `HAKARI DANCING FOR ${num} FLIPS!`;
+            addLog(`STARTING ${num} FLIPS...`, "#000000");
+            
+            showHakariDance();
+            
+            let successes = 0;
+            let failures = 0;
+            
+            for (let i = 0; i < num; i++) {
+                const flip = flipCoinLogic();
+                if (flip.isSuccess) successes++; else failures++;
+                const successClass = flip.isSuccess ? 'success' : 'failure';
+                let msg = `#\( {i+1}: <span class=" \){successClass}">${flip.chosen}</span>`;
+                if (flip.isKrark) msg += ` <span class="krark">(Krark: ${flip.physical[0]} + ${flip.physical[1]})</span>`;
+                addLog(msg, flip.isSuccess ? "#006600" : "#990000");
+                await new Promise(r => setTimeout(r, 450));
+            }
+            
+            await new Promise(r => setTimeout(r, 1200));
+            hideHakariDance();
+            document.getElementById('flipStatus').textContent = "";
+            addLog(`${num} FLIPS COMPLETE — ${successes} SUCCESS, ${failures} FAILURE`, "#000000");
+        }
+        
+        async function flipTillFailure() {
+            document.getElementById('flipStatus').textContent = "HAKARI DANCE TILL FAILURE!";
+            addLog("FLIP TILL FAILURE STARTED...", "#000000");
+            
+            let streak = 0;
+            let totalFlips = 0;
+            
+            showHakariDance();
+            
+            while (true) {
+                totalFlips++;
+                const flip = flipCoinLogic();
+                const successClass = flip.isSuccess ? 'success' : 'failure';
+                let msg = `#\( {totalFlips}: <span class=" \){successClass}">${flip.chosen}</span>`;
+                if (flip.isKrark) msg += ` <span class="krark">(Krark: ${flip.physical[0]} + ${flip.physical[1]})</span>`;
+                addLog(msg, flip.isSuccess ? "#006600" : "#990000");
+                
+                if (flip.isSuccess) streak++;
+                else break;
+                
+                if (totalFlips > 200) {
+                    addLog("SAFETY LIMIT REACHED (200 flips)", "#990000");
+                    break;
+                }
+                await new Promise(r => setTimeout(r, 550));
+            }
+            
+            hideHakariDance();
+            document.getElementById('flipStatus').textContent = "";
+            addLog(`💥 FAILURE ON FLIP #${totalFlips} — ${streak} SUCCESSFUL IN A ROW!`, "#990000");
+        }
+        
+        document.addEventListener('keydown', e => {
+            if (e.key === "1") flipOne();
+            if (e.key === "x" || e.key === "X") flipX();
+            if (e.key === "f" || e.key === "F") flipTillFailure();
+        });
+        
+        window.onload = init;
+    </script>
+</body>
+</html>
